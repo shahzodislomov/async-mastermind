@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, Search } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 
 export default function Archive() {
   const { data: metrics, isLoading } = trpc.archive.metrics.useQuery({ groupId: 1 });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [moodFilter, setMoodFilter] = useState<number | null>(null);
 
   const handleExport = (format: "csv" | "json") => {
     try {
@@ -53,6 +56,32 @@ export default function Archive() {
     week: `W${idx + 1}`,
     value: parseFloat(m.value?.toString() || "0"),
   })) || [];
+
+  // Mock entry data for filtering
+  const allEntries = [
+    { week: 18, date: new Date(Date.now() - 0 * 7 * 24 * 60 * 60 * 1000), mood: 4, metric: 5500, win: "Shipped auth", blocker: "Database issues" },
+    { week: 17, date: new Date(Date.now() - 1 * 7 * 24 * 60 * 60 * 1000), mood: 3, metric: 5000, win: "Hit MRR", blocker: "Burnout" },
+    { week: 16, date: new Date(Date.now() - 2 * 7 * 24 * 60 * 60 * 1000), mood: 4, metric: 4800, win: "Onboarded users", blocker: "Payment integration" },
+    { week: 15, date: new Date(Date.now() - 3 * 7 * 24 * 60 * 60 * 1000), mood: 2, metric: 4500, win: "Fixed bugs", blocker: "Team bandwidth" },
+    { week: 14, date: new Date(Date.now() - 4 * 7 * 24 * 60 * 60 * 1000), mood: 5, metric: 5200, win: "Launched feature", blocker: "None" },
+  ];
+
+  // Filter entries based on search and mood
+  const filteredEntries = allEntries.filter((entry) => {
+    const matchesSearch =
+      entry.win.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.blocker.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesMood = moodFilter === null || entry.mood === moodFilter;
+    return matchesSearch && matchesMood;
+  });
+
+  const moodEmojis: Record<number, string> = {
+    1: "😞",
+    2: "😐",
+    3: "🙂",
+    4: "😊",
+    5: "🎉",
+  };
 
   return (
     <div className="flex-1 p-8">
@@ -121,35 +150,92 @@ export default function Archive() {
           </div>
         </div>
 
+        {/* Search and Filter */}
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h2 className="text-xl font-normal">Search and Filter</h2>
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search wins and blockers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-field pl-10"
+              />
+            </div>
+
+            {/* Mood Filter */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Filter by mood</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setMoodFilter(null)}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    moodFilter === null
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-border"
+                  }`}
+                >
+                  All
+                </button>
+                {[1, 2, 3, 4, 5].map((mood) => (
+                  <button
+                    key={mood}
+                    onClick={() => setMoodFilter(mood)}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      moodFilter === mood
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-border"
+                    }`}
+                  >
+                    {moodEmojis[mood]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Entry Log */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-normal">Update Log</h2>
+          <h2 className="text-2xl font-normal">
+            Update Log ({filteredEntries.length} results)
+          </h2>
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((week) => (
-              <div
-                key={week}
-                className="update-card p-4 flex justify-between items-center hover:border-primary transition-colors cursor-pointer"
-              >
-                <div>
-                  <p className="text-sm text-muted-foreground">Week {18 - week + 1}</p>
-                  <p className="font-normal">
-                    {new Date(Date.now() - week * 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Mood</p>
-                    <p className="text-lg">😊</p>
+            {filteredEntries.length > 0 ? (
+              filteredEntries.map((entry) => (
+                <div
+                  key={entry.week}
+                  className="update-card p-4 flex justify-between items-center hover:border-primary transition-colors cursor-pointer"
+                >
+                  <div>
+                    <p className="text-sm text-muted-foreground">Week {entry.week}</p>
+                    <p className="font-normal">{entry.date.toLocaleDateString()}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{entry.win}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Metric</p>
-                    <p className="text-lg font-normal text-primary">
-                      ${5000 + week * 500}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Mood</p>
+                      <p className="text-lg">{moodEmojis[entry.mood]}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Metric</p>
+                      <p className="text-lg font-normal text-primary">
+                        ${entry.metric}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No updates match your search or filter criteria.
+                </p>
+              </Card>
+            )}
           </div>
         </div>
 

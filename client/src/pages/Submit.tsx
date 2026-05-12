@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Mic, Square } from "lucide-react";
 
 export default function Submit() {
   const { user } = useAuth();
   const [mood, setMood] = useState(3);
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [formData, setFormData] = useState({
     win: "",
     blocker: "",
@@ -22,11 +25,44 @@ export default function Submit() {
       toast.success("Update submitted successfully!");
       setFormData({ win: "", blocker: "", target: "", reflection: "", metricValue: "" });
       setMood(3);
+      setVoiceNoteUrl(null);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to submit update");
     },
   });
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks: BlobPart[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setVoiceNoteUrl(url);
+        toast.success("Voice note recorded");
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      toast.error("Failed to access microphone");
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,12 +243,55 @@ export default function Submit() {
                 Record up to 3 minutes (optional)
               </span>
             </label>
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
-              <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Click to record or upload an audio file
-              </p>
-            </div>
+            {voiceNoteUrl ? (
+              <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Voice note recorded</p>
+                  <button
+                    type="button"
+                    onClick={() => setVoiceNoteUrl(null)}
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <audio src={voiceNoteUrl} controls className="w-full" />
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                {isRecording ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-center">
+                      <div className="w-4 h-4 bg-destructive rounded-full animate-pulse" />
+                    </div>
+                    <p className="text-sm font-medium">Recording...</p>
+                    <Button
+                      type="button"
+                      onClick={handleStopRecording}
+                      className="btn-secondary w-full"
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      Stop Recording
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Mic className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Click to record your voice note
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleStartRecording}
+                      className="btn-secondary w-full"
+                    >
+                      <Mic className="w-4 h-4 mr-2" />
+                      Start Recording
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

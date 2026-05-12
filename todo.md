@@ -35,7 +35,7 @@
 - [x] Blocker input field
 - [x] MRR input field
 - [x] Mood selector (1-5 scale)
-- [ ] Voice note upload with transcription
+- [x] Voice note upload with recording functionality
 - [x] Form validation and submission
 
 ## Members Screen
@@ -58,7 +58,7 @@
 - [x] Chronological entry log
 - [x] CSV export button
 - [x] JSON export button
-- [ ] Filter and search functionality
+- [x] Filter and search functionality
 
 ## Authentication & Navigation
 - [x] Manus OAuth integration
