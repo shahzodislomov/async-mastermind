@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -43,46 +44,46 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --primary: oklch(0.62 0.15 70);
+  --primary-foreground: oklch(0.1 0 0);
+  --sidebar-primary: oklch(0.62 0.15 70);
+  --sidebar-primary-foreground: oklch(0.1 0 0);
+  --chart-1: oklch(0.62 0.15 70);
+  --chart-2: oklch(0.5 0.15 120);
+  --chart-3: oklch(0.6 0.15 200);
+  --chart-4: oklch(0.55 0.15 280);
+  --chart-5: oklch(0.65 0.15 350);
+  --radius: 0.5rem;
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.96 0.01 65);
+  --card: oklch(0.12 0.01 0);
+  --card-foreground: oklch(0.96 0.01 65);
+  --popover: oklch(0.12 0.01 0);
+  --popover-foreground: oklch(0.96 0.01 65);
+  --secondary: oklch(0.55 0.15 120);
+  --secondary-foreground: oklch(0.1 0 0);
+  --muted: oklch(0.25 0.01 0);
+  --muted-foreground: oklch(0.64 0.01 65);
+  --accent: oklch(0.5 0.15 200);
+  --accent-foreground: oklch(0.96 0.01 65);
+  --destructive: oklch(0.6 0.2 20);
+  --destructive-foreground: oklch(0.96 0.01 65);
+  --border: oklch(0.2 0.01 0);
+  --input: oklch(0.15 0.01 0);
+  --ring: oklch(0.62 0.15 70);
+  --sidebar: oklch(0.12 0.01 0);
+  --sidebar-foreground: oklch(0.96 0.01 65);
+  --sidebar-accent: oklch(0.62 0.15 70);
+  --sidebar-accent-foreground: oklch(0.96 0.01 65);
+  --sidebar-border: oklch(0.2 0.01 0);
+  --sidebar-ring: oklch(0.62 0.15 70);
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
+  --primary: oklch(0.62 0.15 70);
+  --primary-foreground: oklch(0.1 0 0);
+  --sidebar-primary: oklch(0.62 0.15 70);
+  --sidebar-primary-foreground: oklch(0.1 0 0);
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.85 0.005 65);
   --card: oklch(0.21 0.006 285.885);
@@ -119,7 +120,18 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    @apply font-normal;
+  }
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
+  h4 { @apply text-xl; }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -134,6 +146,81 @@
 }
 
 @layer components {
+  /* Update card with 3px colored strip */
+  .update-card {
+    @apply relative rounded-lg bg-card border border-border overflow-hidden;
+  }
+  .update-card::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-primary;
+  }
+  .update-card.status-submitted::before { @apply bg-secondary; }
+  .update-card.status-at-risk::before { @apply bg-destructive; }
+  .update-card.status-peer::before { @apply bg-accent; }
+
+  /* Animated deadline pulse */
+  @keyframes pulse-deadline {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .deadline-pulse {
+    animation: pulse-deadline 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Sidebar left-border accent */
+  .sidebar-accent-border {
+    @apply border-l-4 border-primary;
+  }
+
+  /* Mood selector styling */
+  .mood-button {
+    @apply w-10 h-10 rounded-full border-2 border-border hover:border-primary transition-colors;
+  }
+  .mood-button.selected {
+    @apply bg-primary border-primary;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full bg-primary transition-all duration-300;
+  }
+
+  /* Feedback tags */
+  .feedback-tag {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-medium;
+  }
+  .feedback-tag.encouraging { @apply bg-secondary/20 text-secondary; }
+  .feedback-tag.tactical { @apply bg-accent/20 text-accent; }
+  .feedback-tag.question { @apply bg-primary/20 text-primary; }
+
+  /* Status badges */
+  .status-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  .status-badge.at-risk { @apply bg-destructive/20 text-destructive; }
+  .status-badge.active { @apply bg-secondary/20 text-secondary; }
+  .status-badge.paused { @apply bg-muted/20 text-muted-foreground; }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all font-medium;
+  }
+  .btn-secondary {
+    @apply px-4 py-2 bg-card border border-border text-foreground rounded-lg hover:bg-muted transition-all font-medium;
+  }
+
+  /* Form inputs */
+  .input-field {
+    @apply w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  /* Utilities */
+  .text-muted { @apply text-muted-foreground; }
+  .divider { @apply h-px bg-border; }
+
   /**
    * Custom container utility that centers content and adds responsive padding.
    *

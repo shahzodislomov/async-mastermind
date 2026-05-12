@@ -4,16 +4,61 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
+import Feed from "./pages/Feed";
+import Submit from "./pages/Submit";
+import Members from "./pages/Members";
+import Feedback from "./pages/Feedback";
+import Archive from "./pages/Archive";
+import Landing from "./pages/Landing";
+import Sidebar from "./components/Sidebar";
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    window.location.href = getLoginUrl();
+    return null;
+  }
+
+  return <Component />;
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  const { isAuthenticated } = useAuth();
+
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
+      <Route path={"/(.*)?"} component={() => {
+        if (isAuthenticated) {
+          return (
+            <div className="flex h-screen bg-background">
+              <Sidebar />
+              <div className="flex-1 overflow-auto">
+                <Switch>
+                  <Route path="/feed" component={() => <ProtectedRoute component={Feed} />} />
+                  <Route path="/submit" component={() => <ProtectedRoute component={Submit} />} />
+                  <Route path="/members" component={() => <ProtectedRoute component={Members} />} />
+                  <Route path="/feedback" component={() => <ProtectedRoute component={Feedback} />} />
+                  <Route path="/archive" component={() => <ProtectedRoute component={Archive} />} />
+                  <Route path="/" component={() => <ProtectedRoute component={Feed} />} />
+                  <Route component={NotFound} />
+                </Switch>
+              </div>
+            </div>
+          );
+        }
+        return <Landing />;
+      }} />
     </Switch>
   );
 }
@@ -27,8 +72,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider
-        defaultTheme="light"
-        // switchable
+        defaultTheme="dark"
       >
         <TooltipProvider>
           <Toaster />

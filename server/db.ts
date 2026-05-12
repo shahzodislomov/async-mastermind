@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, groups, groupMembers, updates, feedback, weeks, metrics } from "../drizzle/schema";
+import type { InsertUpdate, InsertFeedback } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +90,141 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============ GROUPS ============
+export async function getGroupById(groupId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(groups).where(eq(groups.id, groupId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserGroups(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(groups)
+    .innerJoin(groupMembers, eq(groups.id, groupMembers.groupId))
+    .where(eq(groupMembers.userId, userId));
+  return result.map((r) => r.groups);
+}
+
+export async function getGroupMembers(groupId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(groupMembers)
+    .innerJoin(users, eq(groupMembers.userId, users.id))
+    .where(eq(groupMembers.groupId, groupId));
+  return result.map((r) => ({ ...r.group_members, user: r.users }));
+}
+
+// ============ UPDATES ============
+export async function createUpdate(update: InsertUpdate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(updates).values(update);
+  return result;
+}
+
+export async function getUserUpdates(userId: number, limit: number = 20, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(updates)
+    .where(eq(updates.userId, userId))
+    .orderBy((u) => desc(u.submittedAt))
+    .limit(limit)
+    .offset(offset);
+  return result;
+}
+
+export async function getGroupUpdates(groupId: number, weekId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  if (weekId) {
+    return await db
+      .select()
+      .from(updates)
+      .where(and(eq(updates.groupId, groupId), eq(updates.weekId, weekId)))
+      .orderBy((u) => desc(u.submittedAt));
+  }
+  return await db
+    .select()
+    .from(updates)
+    .where(eq(updates.groupId, groupId))
+    .orderBy((u) => desc(u.submittedAt));
+}
+
+export async function getUpdateById(updateId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(updates).where(eq(updates.id, updateId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ============ FEEDBACK ============
+export async function createFeedback(fb: InsertFeedback) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(feedback).values(fb);
+  return result;
+}
+
+export async function getUpdateFeedback(updateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(feedback)
+    .where(eq(feedback.updateId, updateId))
+    .orderBy((f) => desc(f.createdAt));
+  return result;
+}
+
+export async function getUserReceivedFeedback(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(feedback)
+    .where(eq(feedback.toUserId, userId))
+    .orderBy((f) => desc(f.createdAt))
+    .limit(limit);
+  return result;
+}
+
+// ============ WEEKS ============
+export async function getCurrentWeek(groupId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(weeks)
+    .where(eq(weeks.groupId, groupId))
+    .orderBy((w) => desc(w.weekNumber))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getWeekById(weekId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(weeks).where(eq(weeks.id, weekId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ============ METRICS ============
+export async function getUserMetrics(userId: number, groupId: number, limit: number = 18) {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select()
+    .from(metrics)
+    .where(and(eq(metrics.userId, userId), eq(metrics.groupId, groupId)))
+    .orderBy((m) => desc(m.createdAt))
+    .limit(limit);
+  return result.reverse();
+}
