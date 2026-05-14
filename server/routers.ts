@@ -3,6 +3,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { transcribeAudio } from "./_core/voiceTranscription";
+import { notifyOwner } from "./_core/notification";
 import {
   createUpdate,
   getUserUpdates,
@@ -110,6 +112,27 @@ export const appRouter = router({
       .input(z.object({ groupId: z.number(), weekId: z.number().optional() }))
       .query(async ({ input }) => {
         return await getGroupUpdates(input.groupId, input.weekId);
+      }),
+
+    transcribeVoice: protectedProcedure
+      .input(z.object({ audioUrl: z.string(), language: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await transcribeAudio({
+            audioUrl: input.audioUrl,
+            language: input.language || "en",
+          });
+          if ('error' in result) {
+            throw new Error(result.error);
+          }
+          return {
+            success: true,
+            transcript: result.text || "",
+            language: result.language || "en",
+          };
+        } catch (error) {
+          throw new Error(`Transcription failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
       }),
   }),
 
@@ -231,6 +254,57 @@ export const appRouter = router({
           data: csv,
           filename: `archive-${new Date().toISOString().split("T")[0]}.csv`,
         };
+      }),
+  }),
+
+  // ============ NOTIFICATIONS ============
+  notifications: router({
+    sendAlert: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string(),
+        type: z.enum(["submission", "feedback", "streak", "milestone"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const result = await notifyOwner({
+            title: input.title,
+            content: input.content,
+          });
+          return { success: result };
+        } catch (error) {
+          throw new Error(`Notification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+      }),
+
+    notifyLateSubmission: protectedProcedure
+      .input(z.object({ groupId: z.number(), memberName: z.string() }))
+      .mutation(async ({ input }) => {
+        const result = await notifyOwner({
+          title: "Late Submission Alert",
+          content: `${input.memberName} hasn't submitted their weekly update yet. Deadline is approaching!`,
+        });
+        return { success: result };
+      }),
+
+    notifyFeedbackReceived: protectedProcedure
+      .input(z.object({ fromUser: z.string(), tag: z.string() }))
+      .mutation(async ({ input }) => {
+        const result = await notifyOwner({
+          title: "New Feedback Received",
+          content: `${input.fromUser} left ${input.tag} feedback on your update.`,
+        });
+        return { success: result };
+      }),
+
+    notifyStreakMilestone: protectedProcedure
+      .input(z.object({ weeks: z.number() }))
+      .mutation(async ({ input }) => {
+        const result = await notifyOwner({
+          title: "🔥 Streak Milestone!",
+          content: `You've reached a ${input.weeks}-week submission streak! Keep the momentum going.`,
+        });
+        return { success: result };
       }),
   }),
 });

@@ -4,13 +4,15 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Loader2, Mic, Square } from "lucide-react";
+import { Upload, Loader2, Mic, Square, Zap } from "lucide-react";
 
 export default function Submit() {
   const { user } = useAuth();
   const [mood, setMood] = useState(3);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [formData, setFormData] = useState({
     win: "",
@@ -20,12 +22,25 @@ export default function Submit() {
     metricValue: "",
   });
 
+  const transcribeMutation = trpc.updates.transcribeVoice.useMutation({
+    onSuccess: (data) => {
+      setVoiceTranscript(data.transcript);
+      toast.success("Voice note transcribed!");
+      setIsTranscribing(false);
+    },
+    onError: (error) => {
+      toast.error("Transcription failed: " + error.message);
+      setIsTranscribing(false);
+    },
+  });
+
   const submitMutation = trpc.updates.submit.useMutation({
     onSuccess: () => {
       toast.success("Update submitted successfully!");
       setFormData({ win: "", blocker: "", target: "", reflection: "", metricValue: "" });
       setMood(3);
       setVoiceNoteUrl(null);
+      setVoiceTranscript(null);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to submit update");
@@ -61,6 +76,20 @@ export default function Submit() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    }
+  };
+
+  const handleTranscribe = async () => {
+    if (!voiceNoteUrl) return;
+    setIsTranscribing(true);
+    try {
+      transcribeMutation.mutate({
+        audioUrl: voiceNoteUrl,
+        language: "en",
+      });
+    } catch (error) {
+      toast.error("Failed to transcribe");
+      setIsTranscribing(false);
     }
   };
 
@@ -249,13 +278,45 @@ export default function Submit() {
                   <p className="text-sm font-medium">Voice note recorded</p>
                   <button
                     type="button"
-                    onClick={() => setVoiceNoteUrl(null)}
+                    onClick={() => {
+                      setVoiceNoteUrl(null);
+                      setVoiceTranscript(null);
+                    }}
                     className="text-xs text-destructive hover:underline"
                   >
                     Clear
                   </button>
                 </div>
                 <audio src={voiceNoteUrl} controls className="w-full" />
+                
+                {voiceTranscript ? (
+                  <div className="bg-muted p-3 rounded text-sm space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-primary" />
+                      <p className="font-medium">Transcript</p>
+                    </div>
+                    <p className="text-muted-foreground">{voiceTranscript}</p>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleTranscribe}
+                    disabled={isTranscribing}
+                    className="btn-secondary w-full"
+                  >
+                    {isTranscribing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Transcribing...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Transcribe Voice Note
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">

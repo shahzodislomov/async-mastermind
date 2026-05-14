@@ -1,11 +1,33 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRealtime } from "@/hooks/useRealtime";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Feed() {
   const { user } = useAuth();
   const { data: updates, isLoading } = trpc.updates.list.useQuery({ limit: 20 });
+  const { subscribe } = useRealtime(user?.id);
+  const [liveUpdates, setLiveUpdates] = useState<any[]>([]);
+
+  // Subscribe to real-time update events
+  useEffect(() => {
+    const unsubscribe = subscribe("update:new", (data: any) => {
+      setLiveUpdates((prev) => [data, ...prev]);
+      toast.success(`New update submitted!`);
+    });
+    return unsubscribe;
+  }, [subscribe]);
+
+  // Subscribe to streak milestone events
+  useEffect(() => {
+    const unsubscribe = subscribe("streak:achieved", (data: any) => {
+      toast.success(`🔥 ${data.weeks}-week streak achieved!`);
+    });
+    return unsubscribe;
+  }, [subscribe]);
 
   if (isLoading) {
     return (
@@ -50,6 +72,16 @@ export default function Feed() {
             </div>
           </div>
         </div>
+
+        {/* Live Updates Badge */}
+        {liveUpdates.length > 0 && (
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center gap-3">
+            <Zap className="w-5 h-5 text-primary animate-pulse" />
+            <p className="text-sm font-medium text-primary">
+              {liveUpdates.length} new update{liveUpdates.length > 1 ? "s" : ""} just submitted!
+            </p>
+          </div>
+        )}
 
         {/* Updates List */}
         <div className="space-y-4">

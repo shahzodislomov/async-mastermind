@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
-import { BarChart3, Users, MessageSquare, Archive, PlusCircle, LogOut } from "lucide-react";
+import { BarChart3, Users, MessageSquare, Archive, PlusCircle, LogOut, Trophy, TrendingUp, Settings } from "lucide-react";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -12,6 +12,9 @@ export default function Sidebar() {
     { label: "Members", path: "/members", icon: Users },
     { label: "Feedback", path: "/feedback", icon: MessageSquare },
     { label: "Archive", path: "/archive", icon: Archive },
+    { label: "Achievements", path: "/achievements", icon: Trophy },
+    { label: "Metrics", path: "/metrics", icon: TrendingUp },
+    { label: "Groups", path: "/groups", icon: Settings },
   ];
 
   const handleLogout = async () => {

@@ -11,6 +11,9 @@ import Submit from "./pages/Submit";
 import Members from "./pages/Members";
 import Feedback from "./pages/Feedback";
 import Archive from "./pages/Archive";
+import Achievements from "./pages/Achievements";
+import Metrics from "./pages/Metrics";
+import Groups from "./pages/Groups";
 import Landing from "./pages/Landing";
 import Sidebar from "./components/Sidebar";
 
@@ -50,6 +53,9 @@ function Router() {
                   <Route path="/members" component={() => <ProtectedRoute component={Members} />} />
                   <Route path="/feedback" component={() => <ProtectedRoute component={Feedback} />} />
                   <Route path="/archive" component={() => <ProtectedRoute component={Archive} />} />
+                  <Route path="/achievements" component={() => <ProtectedRoute component={Achievements} />} />
+                  <Route path="/metrics" component={() => <ProtectedRoute component={Metrics} />} />
+                  <Route path="/groups" component={() => <ProtectedRoute component={Groups} />} />
                   <Route path="/" component={() => <ProtectedRoute component={Feed} />} />
                   <Route component={NotFound} />
                 </Switch>
